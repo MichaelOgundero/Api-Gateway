@@ -54,7 +54,7 @@ def test():
     return "This is our game"
 
 
-@app.route("/log_in", methods=['GET'])
+@app.route("/log_in", methods=['POST'])
 def log_in(email, password):
     if not email:
         return 400
@@ -69,7 +69,7 @@ def log_in(email, password):
 @app.route("/log_out", methods=['GET'])
 @require_authentication()
 def log_out(username):
-    response = http.request('GET', auth_service_url, data={'username': username})
+    response = http.request('GET', auth_service_url, params=username)
     if not response.data:
         return 500, "Internal server error"
     return response.status, response.data
@@ -110,7 +110,7 @@ def delete_account(userid):
         return 400
     if not isinstance(userid, int):
         return 400
-    response = http.request('DELETE', auth_service_url, fields=userid)
+    response = http.request('DELETE', auth_service_url, params=userid)
     if not response:
         return 500, "Internal server error"
     return response.status, response.data
@@ -120,7 +120,7 @@ def delete_account(userid):
 def update_account(updatedString):
     if not updatedString:
         return 400
-    response = http.request('PUT', auth_service_url, fields=updatedString)
+    response = http.request('PUT', auth_service_url, data={'updatedString': updatedString})
     if not response:
         return 500, "Internal server error"
     return response.status, response.data
@@ -161,7 +161,7 @@ def rename_lobby(username, newLobbyName):
     if len(newLobbyName) < 1:
         return 400
 
-    response = http.request('PUT', lobby_url, fields=newLobbyName, data={'username': username})
+    response = http.request('PUT', lobby_url, data={'username': username, 'newLobbyName': newLobbyName})
     if not response:
         return 500, "Internal server error"
     return response.status, response.data
@@ -175,7 +175,7 @@ def set_seed(username, seed):
     if not isinstance(seed, int):
         return 400
 
-    response = http.request('PUT', lobby_url, fields=seed, data={'username': username})
+    response = http.request('PUT', lobby_url, data={'username': username, 'seed': seed})
     if not response:
         return 500, "Internal server error"
     return response.status, response.data
@@ -187,7 +187,7 @@ def new_game_lobby(username, playerNumber):
     if not isinstance(playerNumber, int):
         return 400
 
-    response = http.request('POST', lobby_url, fields=playerNumber, data={'username': username})
+    response = http.request('POST', lobby_url, data={'username': username, 'playerNumber': playerNumber})
     if not response:
         return 500, "Internal server error"
     return response.status, response.data
@@ -201,7 +201,7 @@ def join_game_lobby(username, gameID):
     if not isinstance(gameID, int):
         return 400
 
-    response = http.request('PUT', lobby_url, fields=gameID, data={'username': username})
+    response = http.request('PUT', lobby_url, data={'username': username, 'gameID': gameID})
     if not response:
         return 500, "Internal server error"
     return response.status, response.data
@@ -218,7 +218,7 @@ def get_game_list():
 @app.route("/get_game_lobby_data", methods=['GET'])
 @require_authentication()
 def get_game_lobby_data(username):
-    response = http.request('GET', lobby_url, data={'username': username})
+    response = http.request('GET', lobby_url, params=username)
     if not response.data:
         return 500, "Internal server error"
     return response.status, response.data
@@ -248,7 +248,7 @@ def upgrade(baseID):
     if not isinstance(baseID, int):
         return 400
 
-    response = http.request('PUT', game_engine_url, fields=baseID)
+    response = http.request('PUT', game_engine_url, data={'baseID': baseID})
     if not response.data:
         return 500, "Internal server error"
     return response.status, response.data
@@ -320,7 +320,7 @@ def get_moves(unitID):
     if not isinstance(unitID, int):
         return 400
 
-    response = http.request('GET', game_engine_url, fields=unitID)
+    response = http.request('GET', game_engine_url, params=unitID)
     if not response.data:
         return 500, "Internal server error"
     return response.status, response.data
@@ -333,7 +333,7 @@ def get_attacks(unitID):
     if not isinstance(unitID, int):
         return 400
 
-    response = http.request('GET', game_engine_url, fields=unitID)
+    response = http.request('GET', game_engine_url, params=unitID)
     if not response.data:
         return 500, "Internal server error"
     return response.status, response.data
@@ -346,7 +346,7 @@ def get_placement(baseID):
     if not isinstance(baseID, int):
         return 400
 
-    response = http.request('GET', game_engine_url, fields=baseID)
+    response = http.request('GET', game_engine_url, params=baseID)
     if not response.data:
         return 500, "Internal server error"
     return response.status, response.data
@@ -355,7 +355,7 @@ def get_placement(baseID):
 @app.route("/get_state", methods=['GET'])
 @require_authentication()
 def get_state(username):
-    response = http.request('GET', game_engine_url, data={'username': username})
+    response = http.request('GET', game_engine_url, params=username)
     if not response.data:
         return 500, "Internal server error"
     return response.status, response.data
