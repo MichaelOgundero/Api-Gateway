@@ -5,6 +5,7 @@ from functools import wraps
 from requests import request
 from flask import abort
 from flask import request
+from flask import render_template
 
 http = AppEngineManager() if is_appengine_sandbox() else PoolManager()
 if not http:
@@ -31,6 +32,8 @@ def require_authentication():
         def authenticate_user(*args, **kwargs):
             token = None
             tmp = None
+            tmp2 = None
+            tmp3 = None
             if authorization_header in request.headers:
                 tmp = request.headers[authorization_header].split(" ")
 
@@ -42,9 +45,12 @@ def require_authentication():
 
             username = None
 
-            response = http.request('GET', "https://security-dot-training-project-lab.appspot.com/authenticate?token=" + token)
+            response = http.request('GET',
+                                    "https://security-dot-training-project-lab.appspot.com/authenticate?token=" + token)
 
-            username = response.data
+            tmp2 = response.data.split(" ")
+            tmp3 = tmp2[1].split("\"")
+            username = tmp3[0]
 
             return api_method(username, *args, **kwargs)
 
@@ -56,6 +62,15 @@ def require_authentication():
 @app.route("/")
 def test():
     return "This is our game"
+
+
+def __unicode__(self):
+    return unicode(self.some_field) or u''
+
+
+@app.route('/<string:page_name>/')
+def render_static(page_name):
+    return render_template('%s.html' % page_name)
 
 
 @app.route("/test", methods=['GET'])
@@ -94,10 +109,11 @@ def activeList():
 def signUp():
     email = request.args.get('email')
     name = request.args.get('name')
-    last_name = request.args.get('last_name')
+    lastName = request.args.get('lastName')
     password = request.args.get('password')
 
-    response = http.request('POST', "https://security-dot-training-project-lab.appspot.com/signup?name=" + name + "&last_name=" + last_name + "&email=" + email + "&password=" + password)
+    response = http.request('POST',
+                            "https://security-dot-training-project-lab.appspot.com/signup?name=" + name + "&last_name=" + lastName + "&email=" + email + "&password=" + password)
     return response.data
 
 
@@ -106,12 +122,11 @@ def deleteAccount():
     userid = request.args.get('userid')
     if not userid:
         return 400
-    if not isinstance(userid, int):
-        return 400
+
     response = http.request('DELETE', auth_service_url, params=userid)
     if not response:
         return 500, "Internal server error"
-    return response.status
+    return response.data
 
 
 @app.route("/updateAccount", methods=['PUT'])
@@ -121,38 +136,36 @@ def updateAccount(updatedString):
     response = http.request('PUT', auth_service_url, data={'updatedString': updatedString})
     if not response:
         return 500, "Internal server error"
-    return response.status
+    return response.data
 
 
-@app.route("/LeaveGameLobby", methods=['PUT'])
+@app.route("/leaveGameLobby", methods=['PUT'])
 @require_authentication()
 def LeaveGameLobby(username):
+    response = http.request('PUT',
+                            "https://lobbyservice-dot-training-project-lab.appspot.com/LeaveGameLobby?username=" + username)
 
-    response = http.request('PUT', "https://lobbyservice-dot-training-project-lab.appspot.com/LeaveGameLobby?username="+ username)
-    if not response:
-        return 500, "Internal server error"
-    return response.status
+    return response.data
 
 
 @app.route("/Ready", methods=['PUT'])
 @require_authentication()
 def Ready(username):
-    response = http.request('PUT', "https://lobbyservice-dot-training-project-lab.appspot.com/Ready?username="+username)
-    if not response:
-        return 500, "Internal server error"
-    return response.status
+    response = http.request('PUT',
+                            "https://lobbyservice-dot-training-project-lab.appspot.com/Ready?username=" + username)
+    return response.data
 
 
-@app.route("/UnReady", methods=['PUT'])
+@app.route("/unReady", methods=['PUT'])
 @require_authentication()
 def UnReady(username):
-    response = http.request('PUT', "https://lobbyservice-dot-training-project-lab.appspot.com/Unready?username"+username)
-    if not response:
-        return 500, "Internal server error"
-    return response.status
+    response = http.request('PUT',
+                            "https://lobbyservice-dot-training-project-lab.appspot.com/UnReady?username" + username)
+
+    return response.data
 
 
-@app.route("/RenameLobby", methods=['PUT'])
+@app.route("/renameLobby", methods=['PUT'])
 @require_authentication()
 def RenameLobby(username):
     newLobbyName = request.args.get('newLobbyName')
@@ -161,56 +174,48 @@ def RenameLobby(username):
     if len(newLobbyName) < 1:
         return 400
 
-    response = http.request('PUT', "https://lobbyservice-dot-training-project-lab.appspot.com/RenameLobby?username="+username+"&newLobbyName="+newLobbyName)
-    if not response:
-        return 500, "Internal server error"
-    return response.status
+    response = http.request('PUT',
+                            "https://lobbyservice-dot-training-project-lab.appspot.com/RenameLobby?newLobbyName=" + newLobbyName + "&username=" + username)
+
+    return response.data
 
 
-@app.route("/SetSeed", methods=['PUT'])
+@app.route("/setSeed", methods=['PUT'])
 @require_authentication()
 def SetSeed(username):
     seed = request.args.get('seed')
     if not seed:
         return 400
-    if not isinstance(seed, int):
-        return 400
 
-    response = http.request('PUT', "https://lobbyservice-dot-training-project-lab.appspot.com/SetSeed?username="+username+"&seed="+seed)
-    if not response:
-        return 500, "Internal server error"
-    return response.status
+    response = http.request('PUT',
+                            "https://lobbyservice-dot-training-project-lab.appspot.com/SetSeed?seed=" + seed + "&username=" + username)
+
+    return response.data
 
 
-@app.route("/NewGameLobby", methods=['POST'])
+@app.route("/newGameLobby", methods=['POST'])
 @require_authentication()
 def NewGameLobby(username):
     playerNumber = request.args.get('playerNumber')
-    if not isinstance(playerNumber, int):
-        return 400
 
-    response = http.request('POST', "https://lobbyservice-dot-training-project-lab.appspot.com/NewGameLobby?username="+username+"&playerNumber="+playerNumber)
-    if not response:
-        return 500, "Internal server error"
-    return response.status
+    response = http.request('POST',
+                            "https://lobbyservice-dot-training-project-lab.appspot.com/NewGameLobby?playerNumber=" + playerNumber + "&userName=" + username)
+
+    return response.data
 
 
-@app.route("/JoinGameLobby", methods=['PUT'])
+@app.route("/joinGameLobby", methods=['PUT'])
 @require_authentication()
 def JoinGameLobby(username):
-    gameID = request.args.get('gameID')
-    if not gameID:
-        return 400
-    if not isinstance(gameID, int):
-        return 400
+    gameID = request.args.get('GameID')
 
-    response = http.request('PUT', "https://lobbyservice-dot-training-project-lab.appspot.com/JoinGameLobby?username="+username+"&gameID"+gameID)
-    if not response:
-        return 500, "Internal server error"
-    return response.status
+    response = http.request('PUT',
+                            "https://lobbyservice-dot-training-project-lab.appspot.com/JoinGameLobby?GameID=" + gameID + "&userName=" + username)
+
+    return response.data
 
 
-@app.route("/GetGameList", methods=['GET'])
+@app.route("/getGameList", methods=['GET'])
 def GetGameList():
     response = http.request('GET', "https://lobbyservice-dot-training-project-lab.appspot.com/GetGameList")
     if not response.data:
@@ -218,10 +223,11 @@ def GetGameList():
     return response.data
 
 
-@app.route("/GetGameLobbyData", methods=['GET'])
+@app.route("/getGameLobbyData", methods=['GET'])
 @require_authentication()
 def GetGameLobbyData(username):
-    response = http.request('GET', "https://lobbyservice-dot-training-project-lab.appspot.com/GetGameLobbyData?username="+username)
+    response = http.request('GET',
+                            "https://lobbyservice-dot-training-project-lab.appspot.com/GetGameLobbyData?userName=" + username)
     if not response.data:
         return 500, "Internal server error"
     return response.data
@@ -230,18 +236,16 @@ def GetGameLobbyData(username):
 @app.route("/forfeit", methods=['PUT'])
 @require_authentication()
 def forfeit(username):
-    response = http.request('PUT', "https://gameengine-dot-training-project-lab.appspot.com/forfeit?username"+username)
-    if not response:
-        return 500, "Internal server error"
-    return response.status
+    response = http.request('PUT',
+                            "https://gameengine-dot-training-project-lab.appspot.com/forfeit?username" + username)
+    return response.data
 
 
 @app.route("/endTurn", methods=['PUT'])
 @require_authentication()
 def endTurn(username):
-    response = http.request('PUT', "https://gameengine-dot-training-project-lab.appspot.com/end_turn?username="+username)
-    if not response.data:
-        return 500, "Internal server error"
+    response = http.request('PUT',
+                            "https://gameengine-dot-training-project-lab.appspot.com/end_turn?username=" + username)
     return response.data
 
 
@@ -251,17 +255,14 @@ def upgrade(username):
     baseID = request.args.get('baseID')
     if not baseID:
         return 400
-    if not isinstance(baseID, int):
-        return 400
 
-    response = http.request('PUT', "https://gameengine-dot-training-project-lab.appspot.com/upgrade?username="+username+"&baseID="+baseID)
-    if not response.data:
-        return 500, "Internal server error"
+    response = http.request('PUT',
+                            "https://gameengine-dot-training-project-lab.appspot.com/upgrade?baseID=" + baseID + "&username=" + username)
 
     return response.data
 
 
-@app.route("/createUnit", methods=['POST'])
+@app.route("/createUnit", methods=['PUT'])
 @require_authentication()
 def createUnit(username):
     xCoord = request.args.get('xCoord')
@@ -276,18 +277,11 @@ def createUnit(username):
         return 400
     if not baseID:
         return 400
-    if not isinstance(xCoord, int):
-        return 400
-    if not isinstance(yCoord, int):
-        return 400
-    if not isinstance(baseID, int):
-        return 400
 
-    response = http.request('POST', "https://gameengine-dot-training-project-lab.appspot.com/create_unit?username="+username+"&xCoord="+xCoord+"&yCoord="+yCoord+"&type="+type+"&baseID="+baseID)
-    if not response:
-        return 500, "Internal server error"
+    response = http.request('PUT',
+                            "https://gameengine-dot-training-project-lab.appspot.com/create_unit?xCoord=" + xCoord + "&yCoord=" + yCoord + "&type=" + type + "&baseID=" + baseID + "&username=" + username)
 
-    return response.status
+    return response.data
 
 
 @app.route("/move", methods=['PUT'])
@@ -302,17 +296,11 @@ def move(username):
         return 400
     if not unitID:
         return 400
-    if not isinstance(xCoord, int):
-        return 400
-    if not isinstance(yCoord, int):
-        return 400
-    if not isinstance(unitID, int):
-        return 400
 
-    response = http.request('PUT', "https://gameengine-dot-training-project-lab.appspot.com/move?username="+username+"&xCoord="+xCoord+"&yCoord="+yCoord+"&unitID="+unitID)
-    if not response:
-        return 500, "Internal server error"
-    return response.status
+    response = http.request('PUT',
+                            "https://gameengine-dot-training-project-lab.appspot.com/move?xCoord=" + xCoord + "&yCoord=" + yCoord + "&unitID=" + unitID + "&username=" + username)
+
+    return response.data
 
 
 @app.route("/attack", methods=['PUT'])
@@ -327,17 +315,10 @@ def attack(username):
         return 400
     if not unitID:
         return 400
-    if not isinstance(xCoord, int):
-        return 400
-    if not isinstance(yCoord, int):
-        return 400
-    if not isinstance(unitID, int):
-        return 400
 
-    response = http.request('PUT', "https://gameengine-dot-training-project-lab.appspot.com/attack?username="+username+"&xCoord="+xCoord+"&yCoord="+yCoord+"&unitID="+unitID)
-    if not response:
-        return 500, "Internal server error"
-    return response.status
+    response = http.request('PUT',
+                            "https://gameengine-dot-training-project-lab.appspot.com/attack?xCoord=" + xCoord + "&yCoord=" + yCoord + "&unitID=" + unitID + "&username=" + username)
+    return response.data
 
 
 @app.route("/getMoves", methods=['GET'])
@@ -346,10 +327,9 @@ def getMoves(username):
     unitID = request.args.get('unitID')
     if not unitID:
         return 400
-    if not isinstance(unitID, int):
-        return 400
 
-    response = http.request('GET', "https://gameengine-dot-training-project-lab.appspot.com/get_moves?username="+username+"&unitID="+unitID)
+    response = http.request('GET',
+                            "https://gameengine-dot-training-project-lab.appspot.com/get_moves?unitID=" + unitID + "&username=" + username)
     if not response.data:
         return 500, "Internal server error"
     return response.data
@@ -361,10 +341,9 @@ def getAttacks(username):
     unitID = request.args.get('unitID')
     if not unitID:
         return 400
-    if not isinstance(unitID, int):
-        return 400
 
-    response = http.request('GET', "https://gameengine-dot-training-project-lab.appspot.com/get_attacks?username="+username+"&unitID="+unitID)
+    response = http.request('GET',
+                            "https://gameengine-dot-training-project-lab.appspot.com/get_attacks?unitID=" + unitID + "&username=" + username)
     if not response.data:
         return 500, "Internal server error"
     return response.data
@@ -376,10 +355,9 @@ def getPlacement(username):
     baseID = request.args.get('baseID')
     if not baseID:
         return 400
-    if not isinstance(baseID, int):
-        return 400
 
-    response = http.request('GET', "https://gameengine-dot-training-project-lab.appspot.com/get_placement?username="+username+"&baseID="+baseID)
+    response = http.request('GET',
+                            "https://gameengine-dot-training-project-lab.appspot.com/get_placement?baseID=" + baseID + "&username=" + username)
     if not response.data:
         return 500, "Internal server error"
     return response.data
@@ -388,7 +366,8 @@ def getPlacement(username):
 @app.route("/getState", methods=['GET'])
 @require_authentication()
 def getState(username):
-    response = http.request('GET', "https://gameengine-dot-training-project-lab.appspot.com/get_state?username="+username)
+    response = http.request('GET',
+                            "https://gameengine-dot-training-project-lab.appspot.com/get_state?username=" + username)
     if not response.data:
         return 500, "Internal server error"
     return response.data
