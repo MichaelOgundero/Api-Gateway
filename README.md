@@ -1,3 +1,3 @@
 # Api-Gateway
-the api for the strategy game
+API Gateway for the Strategy Game
 Houssam
