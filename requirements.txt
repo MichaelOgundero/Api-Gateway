@@ -1,4 +1,4 @@
 Flask==0.12
 requests==2.18.4
-urllib3==1.23
+urllib3==1.26.5
 google-api-python-client
